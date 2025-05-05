@@ -26,6 +26,7 @@
   },
   "scripts": {
     "start": "react-scripts start",
+    "prebuild": "rm -f package-lock.json && npm install --no-package-lock",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
