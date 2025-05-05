@@ -1,8 +1,7 @@
 // Minimal HTTP server with better error handling and debugging
 const http = require('node:http');
-// Remove unused modules
-// const fs = require('fs');
-// const path = require('path');
+const fs = require('node:fs');
+const path = require('node:path');
 
 // Log function with timestamps
 const log = (message, ...args) => {
@@ -68,10 +67,33 @@ try {
         res.end('OK');
         return;
       }
+
+      // Serve static files from public directory
+      const publicDir = path.join(process.cwd(), 'public');
+      const filePath = path.join(publicDir, req.url === '/' ? 'index.html' : req.url);
       
-      // For all other routes
-      log('Serving HTML content');
-      res.writeHead(200, {'Content-Type': 'text/html'});
+      // Check if the file exists
+      if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+        const contentType = getContentType(filePath);
+        const content = fs.readFileSync(filePath);
+        res.writeHead(200, {'Content-Type': contentType});
+        res.end(content);
+        return;
+      }
+      
+      // For all non-API routes, serve index.html (for client-side routing)
+      if (!req.url.startsWith('/api')) {
+        const indexPath = path.join(publicDir, 'index.html');
+        if (fs.existsSync(indexPath)) {
+          const content = fs.readFileSync(indexPath);
+          res.writeHead(200, {'Content-Type': 'text/html'});
+          res.end(content);
+          return;
+        }
+      }
+      
+      // Fallback
+      res.writeHead(404, {'Content-Type': 'text/html'});
       res.end(htmlContent);
     } catch (err) {
       logError('Request handler error:', err);
@@ -113,4 +135,21 @@ try {
 } catch (err) {
   logError('Fatal error during server initialization:', err);
   process.exit(1);
+}
+
+// Helper function to determine content type
+function getContentType(filePath) {
+  const extname = path.extname(filePath);
+  switch (extname) {
+    case '.html': return 'text/html';
+    case '.js': return 'text/javascript';
+    case '.css': return 'text/css';
+    case '.json': return 'application/json';
+    case '.png': return 'image/png';
+    case '.jpg': case '.jpeg': return 'image/jpeg';
+    case '.gif': return 'image/gif';
+    case '.svg': return 'image/svg+xml';
+    case '.ico': return 'image/x-icon';
+    default: return 'application/octet-stream';
+  }
 }
