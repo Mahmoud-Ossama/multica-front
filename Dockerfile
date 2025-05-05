@@ -1,23 +1,19 @@
-# Use a simple Node.js image
+# Use a minimal Node.js image
 FROM node:18-alpine
 
 # Set working directory
 WORKDIR /app
 
-# Install Express first to make sure it's available
-RUN npm init -y && npm install express
-
-# Copy server file
+# Copy only the necessary server file
 COPY server.js ./
 
-# Create a minimal index.html for testing
-RUN mkdir -p build && echo '<html><body><h1>Multaqa Frontend</h1><p>Health check test</p></body></html>' > build/index.html
+# Print Node.js version for debugging
+RUN node --version && \
+    echo "Current directory: $(pwd)" && \
+    ls -la
 
 # Expose port
 EXPOSE 8080
 
-# Add debugging
-RUN echo "Current directory: $(pwd)" && ls -la
-
-# Start server
+# Use CMD instead of ENTRYPOINT to allow Railway to override if needed
 CMD ["node", "server.js"]

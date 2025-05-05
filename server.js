@@ -1,59 +1,36 @@
-// Simple Express server to serve static files and provide a health check
-const express = require('express');
-const path = require('path');
-const fs = require('fs');
-const app = express();
+// Minimal HTTP server - no Express, just Node.js http module
+const http = require('http');
+
+// Create server
+const server = http.createServer((req, res) => {
+  console.log(`${new Date().toISOString()} - Request received: ${req.method} ${req.url}`);
+  
+  // Set CORS headers for all responses
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  
+  // Handle health check route
+  if (req.url === '/health' || req.url === '/') {
+    res.writeHead(200, {'Content-Type': 'text/plain'});
+    res.end('OK');
+    return;
+  }
+  
+  // For all other routes
+  res.writeHead(200, {'Content-Type': 'text/html'});
+  res.end('<html><body><h1>Multaqa Frontend</h1><p>Health check test</p></body></html>');
+});
+
+// Define port
 const PORT = process.env.PORT || 8080;
 
-// Log startup information
-console.log('Starting server...');
-console.log('Working directory:', process.cwd());
-console.log('Build directory exists:', fs.existsSync(path.join(process.cwd(), 'build')));
-
-// Health check endpoint - respond immediately with 200 OK
-app.get('/health', (req, res) => {
-  console.log('Health check requested');
-  res.status(200).send('OK');
+// Start server
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`${new Date().toISOString()} - Server started on port ${PORT}`);
 });
 
-// Serve static files from build directory
-try {
-  if (fs.existsSync(path.join(process.cwd(), 'build'))) {
-    app.use(express.static(path.join(process.cwd(), 'build')));
-    console.log('Serving static files from:', path.join(process.cwd(), 'build'));
-  } else {
-    console.warn('Build directory not found, serving minimal content');
-    app.get('/', (req, res) => res.send('App is running but build directory not found'));
-  }
-} catch (error) {
-  console.error('Error setting up static file serving:', error);
-}
-
-// Handle SPA routing
-app.get('*', (req, res) => {
-  console.log('Requested path:', req.path);
-  try {
-    const indexPath = path.join(process.cwd(), 'build', 'index.html');
-    if (fs.existsSync(indexPath)) {
-      res.sendFile(indexPath);
-    } else {
-      res.send('index.html not found');
-    }
-  } catch (error) {
-    console.error('Error serving index.html:', error);
-    res.status(500).send('Internal server error');
-  }
-});
-
-// Error handling
-app.use((err, req, res, next) => {
-  console.error('Server error:', err);
-  res.status(500).send('Something went wrong');
-});
-
-// Start the server with error handling
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on port ${PORT}`);
-}).on('error', (err) => {
-  console.error('Failed to start server:', err);
+// Handle server errors
+server.on('error', (err) => {
+  console.error(`${new Date().toISOString()} - Server error:`, err);
 });
