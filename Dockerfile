@@ -4,15 +4,14 @@ FROM node:18-alpine AS build
 # Set working directory for build
 WORKDIR /build
 
-# Copy package files
-COPY multaqa-frontend-main/multaqa-frontend-main/package.json ./
-COPY multaqa-frontend-main/multaqa-frontend-main/package-lock.json* ./
+# Copy package.json first for better caching
+COPY package.json ./
 
 # Install dependencies
 RUN npm install --no-package-lock
 
 # Copy source code
-COPY multaqa-frontend-main/multaqa-frontend-main/ ./
+COPY . ./
 
 # Build the React application
 RUN npm run build
@@ -28,6 +27,10 @@ COPY server.js ./
 
 # Copy built React app from build stage
 COPY --from=build /build/build ./public
+
+# Log the contents of directories to debug
+RUN echo "Contents of /app:" && ls -la /app && \
+    echo "Contents of /app/public (if exists):" && ls -la /app/public || echo "public directory not found"
 
 # Expose port
 EXPOSE 8080
