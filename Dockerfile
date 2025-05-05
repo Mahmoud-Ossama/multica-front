@@ -8,7 +8,7 @@ WORKDIR /app
 COPY package.json ./
 
 # Install dependencies
-RUN npm install --no-package-lock
+RUN npm install --no-package-lock express
 
 # Copy the rest of the code
 COPY . .
@@ -16,14 +16,8 @@ COPY . .
 # Build the app
 RUN npm run build
 
-# Install serve to deliver the static content
-RUN npm install -g serve
-
-# Create a health check file
-RUN echo "OK" > build/health.txt
-
 # Expose port
-EXPOSE 3000
+EXPOSE 8080
 
 # Start server
-CMD ["serve", "-s", "build", "-l", "3000"]
+CMD ["node", "server.js"]
